@@ -2,9 +2,9 @@ from flask import Flask, jsonify, request
 from flask_mysqldb import MySQL
 from http import HTTPStatus
 
-
 app = Flask(__name__)
 
+# MySQL Configuration
 app.config["MYSQL_HOST"] = "localhost"
 app.config["MYSQL_USER"] = "root"
 app.config["MYSQL_PASSWORD"] = "root"
@@ -13,16 +13,28 @@ app.config["MYSQL_DB"] = "recipe"
 mysql = MySQL(app)
 
 
-def validate_menu_data(data):
+def validate_menu_data(data, is_update=False):
+    """Validates required fields for creating and updating menus"""
     required_fields = ['menu_name', 'menu_description', 'menu_type_code']
-    if not data or not all(field in data for field in required_fields):
-        return jsonify({"error": "Bad Request", "message": "Missing required fields"}), HTTPStatus.BAD_REQUEST
     
+    if not is_update:
+        # For creating, ensure all fields are present
+        if not data or not all(field in data for field in required_fields):
+            return {"error": "Bad Request", "message": "Missing required fields"}, HTTPStatus.BAD_REQUEST
+    
+    # For updating, the fields are optional, so no additional check
     return None
+
+
+@app.route('/')
+def welcome():
+    """Welcome message"""
+    return jsonify({"message": "Welcome to the Recipe API!"}), HTTPStatus.OK
 
 
 @app.route('/menus', methods=['GET'])
 def get_menus():
+    """Get all menus"""
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus")
@@ -36,11 +48,12 @@ def get_menus():
 
 @app.route('/menus', methods=['POST'])
 def create_menu():
+    """Create a new menu"""
     data = request.get_json()
 
     validation_response = validate_menu_data(data)
     if validation_response:
-        return validation_response
+        return jsonify(validation_response[0]), validation_response[1]
 
     menu_name = data['menu_name']
     menu_description = data['menu_description']
@@ -59,6 +72,7 @@ def create_menu():
 
 @app.route('/menus/<int:menu_id>', methods=['GET'])
 def get_menu(menu_id):
+    """Get a specific menu by ID"""
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
@@ -79,6 +93,7 @@ def get_menu(menu_id):
 
 @app.route('/menus/<int:menu_id>', methods=['PUT'])
 def update_menu(menu_id):
+    """Update an existing menu by ID"""
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
@@ -88,6 +103,10 @@ def update_menu(menu_id):
             return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND
 
         data = request.get_json()
+
+        validation_response = validate_menu_data(data, is_update=True)
+        if validation_response:
+            return jsonify(validation_response[0]), validation_response[1]
 
         menu_name = data.get('menu_name', menu[1])
         menu_description = data.get('menu_description', menu[2])
@@ -105,6 +124,7 @@ def update_menu(menu_id):
 
 @app.route('/menus/<int:menu_id>', methods=['DELETE'])
 def delete_menu(menu_id):
+    """Delete a menu by ID"""
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
@@ -124,6 +144,7 @@ def delete_menu(menu_id):
 
 @app.errorhandler(Exception)
 def handle_unexpected_error(error):
+    """General error handler for unexpected exceptions"""
     return jsonify({"error": "Internal Server Error", "message": str(error)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
