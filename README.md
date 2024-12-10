@@ -18,10 +18,15 @@ MYSQL_DB: Database name (recipe)
 
 API Endpoints
 Endpoint			            Method			     Description
+
 /menus				            GET	  	         Get all menus
+
 /menus				            POST	      	   Create a new menu
+
 /menus/<int:menu_id>		  GET	             Get a specific menu by ID
+
 /menus/<int:menu_id>		  PUT	             Update a specific menu by ID
+
 /menus/<int:menu_id>	    DELETE	         Delete a specific menu by ID
 
 Testing
