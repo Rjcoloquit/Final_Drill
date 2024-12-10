@@ -28,7 +28,7 @@ Environment variables needed:
 
 Testing
 To run tests, ensure you have pytest installed and execute the following command:
-pytest
+- pytest
 
 
 Git Commit Guidelines
@@ -36,9 +36,9 @@ Git Commit Guidelines
 ```bash```
 Use conventional commits:
 
-feat: add user authentication
-fix: resolve the database connection issue
-docs: update API documentation
-test: add user registration tests
+- feat: add user authentication
+- fix: resolve the database connection issue
+- docs: update API documentation
+- test: add user registration tests
 
 
