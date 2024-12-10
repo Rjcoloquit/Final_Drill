@@ -1,10 +1,15 @@
 DATABASE ORIGINAL: https://fordnox.github.io/databaseanswers/data_models/game_shop/index.htm
 
+
+MENUS
+
 CREATE
 curl -X POST http://127.0.0.1:5000/menus -H "Content-Type: application/json" -d "{\"menu_name\": \"Pasta\", \"menu_description\": \"A delicious Italian dish\", \"menu_type_code\": \"MT002\"}"
 
 curl -X POST http://127.0.0.1:5000/menus -H "Content-Type: application/json" -d "{\"menu_name\": \"Chocolate Cake\", \"menu_description\": \"A rich and moist chocolate cake\", \"menu_type_code\": \"DS001\"}"
 
+RETRIEVE
+curl http://127.0.0.1:5000/menus
 
 UPDATE
 curl -X PUT "http://127.0.0.1:5000/menus/7" -H "Content-Type: application/json" -d "{\"menu_name\": \"Spaghetti\", \"menu_description\": \"A delicious Italian pasta dish\", \"menu_type_code\": \"Main Course\"}"
