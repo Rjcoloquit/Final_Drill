@@ -4,7 +4,6 @@ from http import HTTPStatus
 
 app = Flask(__name__)
 
-# MySQL Configuration
 app.config["MYSQL_HOST"] = "localhost"
 app.config["MYSQL_USER"] = "root"
 app.config["MYSQL_PASSWORD"] = "root"
@@ -18,11 +17,9 @@ def validate_menu_data(data, is_update=False):
     required_fields = ['menu_name', 'menu_description', 'menu_type_code']
     
     if not is_update:
-        # For creating, ensure all fields are present
         if not data or not all(field in data for field in required_fields):
             return {"error": "Bad Request", "message": "Missing required fields"}, HTTPStatus.BAD_REQUEST
     
-    # For updating, the fields are optional, so no additional check
     return None
 
 
@@ -140,6 +137,7 @@ def delete_menu(menu_id):
         return jsonify({"message": "Menu deleted successfully"}), HTTPStatus.NO_CONTENT
     except Exception as e:
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
 
 
 @app.errorhandler(Exception)
