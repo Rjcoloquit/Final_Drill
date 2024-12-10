@@ -1,18 +1,32 @@
 DATABASE ORIGINAL: https://fordnox.github.io/databaseanswers/data_models/game_shop/index.htm
 
-
-MENUS
-
-CREATE
+------------------MENUS------------------
+---CREATE---
 curl -X POST http://127.0.0.1:5000/menus -H "Content-Type: application/json" -d "{\"menu_name\": \"Pasta\", \"menu_description\": \"A delicious Italian dish\", \"menu_type_code\": \"MT002\"}"
-
 curl -X POST http://127.0.0.1:5000/menus -H "Content-Type: application/json" -d "{\"menu_name\": \"Chocolate Cake\", \"menu_description\": \"A rich and moist chocolate cake\", \"menu_type_code\": \"DS001\"}"
 
-RETRIEVE
+---RETRIEVE---
 curl http://127.0.0.1:5000/menus
 
-UPDATE
+---UPDATE---
 curl -X PUT "http://127.0.0.1:5000/menus/7" -H "Content-Type: application/json" -d "{\"menu_name\": \"Spaghetti\", \"menu_description\": \"A delicious Italian pasta dish\", \"menu_type_code\": \"Main Course\"}"
 
-DELETE
+---DELETE---
 curl -X DELETE http://127.0.0.1:5000/menus/1
+
+
+------------------RECIPES------------------
+---CREATE---
+curl -X POST http://localhost:5000/recipes -H "Content-Type: application/json" -d '{"recipe_name": "Pasta Carbonara", "recipe_description": "A classic Italian pasta dish"}'
+
+---RETRIEVE---
+curl -X GET http://localhost:5000/recipes
+curl -X GET http://localhost:5000/recipes/1
+
+---UPDATE---
+curl -X PUT http://localhost:5000/recipes/1 -H "Content-Type: application/json" -d "{\"recipe_name\": \"Pasta Carbonara Deluxe\", \"recipe_description\": \"An improved version of the classic Pasta Carbonara\"}"
+
+---DELETE---
+curl -X DELETE http://localhost:5000/recipes/15
+
+

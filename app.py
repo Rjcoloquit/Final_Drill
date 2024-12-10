@@ -32,6 +32,8 @@ def welcome():
     """Welcome message"""
     return jsonify({"message": "Welcome to the Recipe API!"}), HTTPStatus.OK
 
+
+#MENUS
 @app.route('/menus', methods=['GET'])
 def get_menus():
     """Get all menus"""
@@ -134,6 +136,108 @@ def delete_menu(menu_id):
     mysql.connection.commit()
 
     return '', HTTPStatus.NO_CONTENT 
+
+#RECIPES
+@app.route('/recipes', methods=['GET'])
+def get_recipes():
+    """Get all recipes"""
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Recipes")
+            recipes = cursor.fetchall()
+
+        recipe_list = [{"recipe_id": recipe[0], "recipe_name": recipe[1], "recipe_description": recipe[2]} for recipe in recipes]
+        return jsonify(recipe_list), HTTPStatus.OK
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@app.route('/recipes', methods=['POST'])
+def create_recipe():
+    """Create a new recipe"""
+    data = request.get_json()
+
+    if 'recipe_name' not in data or 'recipe_description' not in data:
+        return jsonify({"error": "Bad Request", "message": "Missing required fields"}), HTTPStatus.BAD_REQUEST
+
+    recipe_name = data['recipe_name']
+    recipe_description = data['recipe_description']
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("INSERT INTO Recipes (recipe_name, recipe_description) VALUES (%s, %s)", 
+                           (recipe_name, recipe_description))
+            mysql.connection.commit()
+
+        return jsonify({"message": "Recipe created successfully"}), HTTPStatus.CREATED
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@app.route('/recipes/<int:recipe_id>', methods=['GET'])
+def get_recipe(recipe_id):
+    """Get a specific recipe by ID"""
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Recipes WHERE recipe_id = %s", (recipe_id,))
+            recipe = cursor.fetchone()
+
+        if not recipe:
+            return jsonify({"error": "Not Found", "message": "Recipe not found"}), HTTPStatus.NOT_FOUND
+
+        return jsonify({
+            "recipe_id": recipe[0],
+            "recipe_name": recipe[1],
+            "recipe_description": recipe[2]
+        }), HTTPStatus.OK
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@app.route('/recipes/<int:recipe_id>', methods=['PUT'])
+def update_recipe(recipe_id):
+    """Update an existing recipe by ID"""
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Recipes WHERE recipe_id = %s", (recipe_id,))
+            recipe = cursor.fetchone()
+
+        if not recipe:
+            return jsonify({"error": "Not Found", "message": "Recipe not found"}), HTTPStatus.NOT_FOUND
+
+        data = request.get_json()
+
+        recipe_name = data.get('recipe_name', recipe[1])
+        recipe_description = data.get('recipe_description', recipe[2])
+
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("UPDATE Recipes SET recipe_name = %s, recipe_description = %s WHERE recipe_id = %s", 
+                           (recipe_name, recipe_description, recipe_id))
+            mysql.connection.commit()
+
+        return jsonify({"message": "Recipe updated successfully"}), HTTPStatus.OK
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
+@app.route('/recipes/<int:recipe_id>', methods=['DELETE'])
+def delete_recipe(recipe_id):
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Recipes WHERE recipe_id = %s", (recipe_id,))
+            recipe = cursor.fetchone()
+
+            if not recipe:
+                return jsonify({"error": "Not Found", "message": "Recipe not found"}), HTTPStatus.NOT_FOUND
+
+            cursor.execute("DELETE FROM Recipes WHERE recipe_id = %s", (recipe_id,))
+            mysql.connection.commit()
+
+        return '', HTTPStatus.NO_CONTENT 
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+
 
 @app.errorhandler(500)
 def handle_internal_error(error):
