@@ -32,6 +32,8 @@ pytest
 
 
 Git Commit Guidelines
+
+```bash```
 Use conventional commits:
 
 feat: add user authentication
