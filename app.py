@@ -11,23 +11,26 @@ app.config["MYSQL_DB"] = "recipe"
 
 mysql = MySQL(app)
 
-
 def validate_menu_data(data, is_update=False):
     """Validates required fields for creating and updating menus"""
     required_fields = ['menu_name', 'menu_description', 'menu_type_code']
     
+    if not data:
+        return {"error": "Bad Request", "message": "Missing data"}, HTTPStatus.BAD_REQUEST
+    
     if not is_update:
-        if not data or not all(field in data for field in required_fields):
+        if not all(field in data for field in required_fields):
             return {"error": "Bad Request", "message": "Missing required fields"}, HTTPStatus.BAD_REQUEST
+    else:
+        if not any(field in data for field in required_fields):
+            return {"error": "Bad Request", "message": "No valid fields provided for update"}, HTTPStatus.BAD_REQUEST
     
     return None
-
 
 @app.route('/')
 def welcome():
     """Welcome message"""
     return jsonify({"message": "Welcome to the Recipe API!"}), HTTPStatus.OK
-
 
 @app.route('/menus', methods=['GET'])
 def get_menus():
@@ -37,11 +40,33 @@ def get_menus():
             cursor.execute("SELECT * FROM Menus")
             menus = cursor.fetchall()
 
+        if not menus:
+            return jsonify({"error": "Not Found", "message": "No menus found"}), HTTPStatus.NOT_FOUND
+
         menu_list = [{"menu_id": menu[0], "menu_name": menu[1], "menu_description": menu[2], "menu_type_code": menu[3]} for menu in menus]
         return jsonify(menu_list), HTTPStatus.OK
     except Exception as e:
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
+@app.route('/menus/<int:menu_id>', methods=['GET'])
+def get_menu(menu_id):
+    """Get a specific menu by ID"""
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
+            menu = cursor.fetchone()
+
+        if not menu:
+            return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND
+
+        return jsonify({
+            "menu_id": menu[0],
+            "menu_name": menu[1],
+            "menu_description": menu[2],
+            "menu_type_code": menu[3]
+        }), HTTPStatus.OK
+    except Exception as e:
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 @app.route('/menus', methods=['POST'])
 def create_menu():
@@ -65,28 +90,6 @@ def create_menu():
         return jsonify({"message": "Menu created successfully"}), HTTPStatus.CREATED
     except Exception as e:
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
-
-
-@app.route('/menus/<int:menu_id>', methods=['GET'])
-def get_menu(menu_id):
-    """Get a specific menu by ID"""
-    try:
-        with mysql.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
-            menu = cursor.fetchone()
-
-        if not menu:
-            return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND
-
-        return jsonify({
-            "menu_id": menu[0],
-            "menu_name": menu[1],
-            "menu_description": menu[2],
-            "menu_type_code": menu[3]
-        }), HTTPStatus.OK
-    except Exception as e:
-        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
-
 
 @app.route('/menus/<int:menu_id>', methods=['PUT'])
 def update_menu(menu_id):
@@ -118,33 +121,24 @@ def update_menu(menu_id):
     except Exception as e:
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
-
 @app.route('/menus/<int:menu_id>', methods=['DELETE'])
 def delete_menu(menu_id):
-    """Delete a menu by ID"""
-    try:
-        with mysql.connection.cursor() as cursor:
-            cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
-            menu = cursor.fetchone()
+    cursor = mysql.connection.cursor()
+    cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (menu_id,))
+    menu = cursor.fetchone()
 
-        if not menu:
-            return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND
+    if menu is None:
+        return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND  
 
-        with mysql.connection.cursor() as cursor:
-            cursor.execute("DELETE FROM Menus WHERE menu_id = %s", (menu_id,))
-            mysql.connection.commit()
+    cursor.execute("DELETE FROM Menus WHERE menu_id = %s", (menu_id,))
+    mysql.connection.commit()
 
-        return jsonify({"message": "Menu deleted successfully"}), HTTPStatus.NO_CONTENT
-    except Exception as e:
-        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+    return '', HTTPStatus.NO_CONTENT 
 
-
-
-@app.errorhandler(Exception)
-def handle_unexpected_error(error):
-    """General error handler for unexpected exceptions"""
+@app.errorhandler(500)
+def handle_internal_error(error):
+    """Handle Internal Server Errors"""
     return jsonify({"error": "Internal Server Error", "message": str(error)}), HTTPStatus.INTERNAL_SERVER_ERROR
-
 
 if __name__ == '__main__':
     app.run(debug=True)
