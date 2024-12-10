@@ -5,6 +5,8 @@ CREATE DATABASE Recipe;
 USE Recipe;
 
 ALTER TABLE Menus MODIFY menu_id INT AUTO_INCREMENT;
+ALTER TABLE Recipes MODIFY recipe_id INT AUTO_INCREMENT;
+
 
 -- Table: Ref_Types (Combining Menu Types and Ingredient Types)
 CREATE TABLE Ref_Types (
