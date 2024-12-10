@@ -27,6 +27,7 @@ def client(app_with_mocked_mysql):
             yield client
 
 
+#MENU
 # Test: POST /menus
 def test_create_menu(client, mock_cursor):
     data = {"menu_name": "New Menu", "menu_description": "New Description", "menu_type_code": "Type 1"}
@@ -114,19 +115,83 @@ def test_update_menu_not_found(client, mock_cursor):
     assert response.status_code == 404
     assert response.json == {"error": "Not Found", "message": "Menu not found"}
 
+#RECIPE
+# Test: POST /recipes
+def test_create_recipe(client, mock_cursor):
+    data = {"recipe_name": "Pasta Carbonara", "recipe_description": "A classic Italian pasta dish"}
 
-# Test: DELETE /menus/<id>
-def test_delete_menu(client, mock_cursor):
-    mock_cursor.fetchone.return_value = (5, "Menu 5", "Description 5", "Type 5")
-    response = client.delete("/menus/5")
-    assert response.status_code == 204  # Ensure the response code is 204 No Content
-    mock_cursor.execute.assert_any_call("SELECT * FROM Menus WHERE menu_id = %s", (5,))
-    mock_cursor.execute.assert_any_call("DELETE FROM Menus WHERE menu_id = %s", (5,))
+    response = client.post("/recipes", json=data)
+    assert response.status_code == 201
+    assert response.json == {"message": "Recipe created successfully"}
+    mock_cursor.execute.assert_called_once_with(
+        "INSERT INTO Recipes (recipe_name, recipe_description) VALUES (%s, %s)", 
+        (data["recipe_name"], data["recipe_description"])
+    )
 
-# Test: DELETE /menus/<id> - Item not found
-def test_delete_menu_not_found(client, mock_cursor):
+
+# Test: POST /recipes with missing fields
+def test_create_recipe_missing_fields(client):
+    data = {"recipe_name": "Incomplete Recipe"}
+    response = client.post("/recipes", json=data)
+    assert response.status_code == 400
+    assert response.json == {"error": "Bad Request", "message": "Missing required fields"}
+
+
+# Test: GET /recipes
+def test_get_recipes(client, mock_cursor):
+    mock_cursor.fetchall.return_value = [
+        (1, "Pasta Carbonara", "A classic Italian pasta dish"),
+        (2, "Pasta Bolognese", "A rich and savory pasta dish")
+    ]
+
+    response = client.get("/recipes")
+    assert response.status_code == 200
+    assert response.json == [
+        {"recipe_id": 1, "recipe_name": "Pasta Carbonara", "recipe_description": "A classic Italian pasta dish"},
+        {"recipe_id": 2, "recipe_name": "Pasta Bolognese", "recipe_description": "A rich and savory pasta dish"}
+    ]
+
+
+# Test: GET /recipes/<id>
+def test_get_recipe_by_id(client, mock_cursor):
+    mock_cursor.fetchone.return_value = (1, "Pasta Carbonara", "A classic Italian pasta dish")
+
+    response = client.get("/recipes/1")
+    assert response.status_code == 200
+    assert response.json == {
+        "recipe_id": 1,
+        "recipe_name": "Pasta Carbonara",
+        "recipe_description": "A classic Italian pasta dish"
+    }
+
+
+def test_get_recipe_by_id_not_found(client, mock_cursor):
     mock_cursor.fetchone.return_value = None
-    response = client.delete("/menus/999")
-    assert response.status_code == 404  # Ensure 404 is expected
-    assert response.json == {"error": "Not Found", "message": "Menu not found"}
 
+    response = client.get("/recipes/999")
+    assert response.status_code == 404
+    assert response.json == {"error": "Not Found", "message": "Recipe not found"}
+
+def test_update_recipe_not_found(client, mock_cursor):
+    mock_cursor.fetchone.return_value = None
+
+    data = {"recipe_name": "Pasta Carbonara Deluxe"}
+    response = client.put("/recipes/999", json=data)
+    assert response.status_code == 404
+    assert response.json == {"error": "Not Found", "message": "Recipe not found"}
+
+
+# Test: DELETE /recipes/<id>
+def test_delete_recipe(client, mock_cursor):
+    mock_cursor.fetchone.return_value = (5, "Pasta Carbonara", "A classic Italian pasta dish")
+    response = client.delete("/recipes/5")
+    assert response.status_code == 204  
+    mock_cursor.execute.assert_any_call("SELECT * FROM Recipes WHERE recipe_id = %s", (5,))
+    mock_cursor.execute.assert_any_call("DELETE FROM Recipes WHERE recipe_id = %s", (5,))
+
+# Test: DELETE /recipes/<id>  
+def test_delete_recipe_not_found(client, mock_cursor):
+    mock_cursor.fetchone.return_value = None
+    response = client.delete("/recipes/999")
+    assert response.status_code == 404  
+    assert response.json == {"error": "Not Found", "message": "Recipe not found"}
