@@ -25,11 +25,11 @@ Environment variables needed:
 | `/menus/<int:menu_id>`| GET    | Get a specific menu by ID     |
 | `/menus/<int:menu_id>`| PUT    | Update a specific menu by ID  |
 | `/menus/<int:menu_id>`| DELETE | Delete a specific menu by ID  |
-|/recipes|GET|Get all recipes|
-|/recipes|POST|Create a new recipe|
-|/recipes/<int:recipe_id>|GET|Get a specific recipe by ID|
-|/recipes/<int:recipe_id>|PUT|Update a specific recipe by ID|
-|/recipes/<int:recipe_id>|DELETE|Delete a specific recipe by ID|
+|`/recipes`|GET|Get all recipes|
+|`/recipes`|POST|Create a new recipe|
+|`/recipes/<int:recipe_id>`|GET|Get a specific recipe by ID|
+|`/recipes/<int:recipe_id>`|PUT|Update a specific recipe by ID|
+|`/recipes/<int:recipe_id>`|DELETE|Delete a specific recipe by ID|
 
 Testing
 To run tests, ensure you have pytest installed and execute the following command:
