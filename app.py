@@ -33,8 +33,28 @@ def validate_menu_data(data, is_update=False):
 
 @app.route('/')
 def welcome():
-    """Welcome message"""
-    return jsonify({"message": "Welcome to the Recipe API!"}), HTTPStatus.OK
+    """Welcome message with clickable links and descriptions for Menus and Recipes"""
+    base_url = request.host_url.rstrip('/')
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Recipe API</title>
+    </head>
+    <body>
+        <h1>Welcome to the Recipe API!</h1>
+        <p>This API allows you to manage menus and recipes for your application. Use the links below to explore the resources:</p>
+        <ul>
+            <li>
+                <a href="{base_url}/menus">Menus</a>
+            </li>
+            <li>
+                <a href="{base_url}/recipes">Recipes</a>
+            </li>
+        </ul>
+    </body>
+    </html>
+    """, HTTPStatus.OK
 
 
 # MENUS
