@@ -85,8 +85,20 @@ def create_menu():
 
     if not menu_name or not menu_description or not menu_type_code:
         return jsonify({"error": "Bad Request", "message": "Menu name, description, and type code are required"}), 400
-    
-    return jsonify({"message": "Menu created successfully"}), 201
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO Menus (menu_name, menu_description, menu_type_code)
+                VALUES (%s, %s, %s)
+            """, (menu_name, menu_description, menu_type_code))
+            mysql.connection.commit()
+
+        return jsonify({"message": "Menu created successfully"}), 201
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+
 
 @app.route('/menus/<int:menu_id>', methods=['PUT'])
 def update_menu(menu_id):
@@ -138,17 +150,17 @@ def delete_menu(id):
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (id,))
             menu = cursor.fetchone()
-        
-        if cursor.rowcount == 0:
-            return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND
-        
-        cursor.execute("DELETE FROM Menus WHERE menu_id = %s", (id,))
-        mysql.connection.commit()
-        
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Not Found", "message": "Menu not found"}), HTTPStatus.NOT_FOUND
+
+            cursor.execute("DELETE FROM Menus WHERE menu_id = %s", (id,))
+            mysql.connection.commit()
+
         return jsonify({"message": "Menu deleted successfully"}), HTTPStatus.OK
     except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
-
 
 # RECIPES
 @app.route('/recipes', methods=['GET'])
@@ -169,10 +181,25 @@ def get_recipes():
 @app.route('/recipes', methods=['POST'])
 def create_recipe():
     data = request.get_json()
-    if not data.get('recipe_name') or not data.get('recipe_description'):
+    recipe_name = data.get('recipe_name')
+    recipe_description = data.get('recipe_description')
+
+    if not recipe_name or not recipe_description:
         return jsonify({"error": "Bad Request", "message": "Recipe name and description are required"}), 400
-    
-    return jsonify({"message": "Recipe created successfully"}), 201
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO Recipes (recipe_name, recipe_description)
+                VALUES (%s, %s)
+            """, (recipe_name, recipe_description))
+            mysql.connection.commit()
+
+        return jsonify({"message": "Recipe created successfully"}), 201
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), 500
+
 
 @app.route('/recipes/<int:recipe_id>', methods=['GET'])
 def get_recipe(recipe_id):
@@ -239,16 +266,18 @@ def delete_recipe(id):
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Recipes WHERE recipe_id = %s", (id,))
             recipe = cursor.fetchone()
-        
-        if cursor.rowcount == 0:
-            return jsonify({"error": "Not Found", "message": "Recipe not found"}), HTTPStatus.NOT_FOUND
-        
-        cursor.execute("DELETE FROM Recipes WHERE recipe_id = %s", (id,))
-        mysql.connection.commit()
-        
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Not Found", "message": "Recipe not found"}), HTTPStatus.NOT_FOUND
+
+            cursor.execute("DELETE FROM Recipes WHERE recipe_id = %s", (id,))
+            mysql.connection.commit()
+
         return jsonify({"message": "Recipe deleted successfully"}), HTTPStatus.OK
     except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
 
 
 @app.errorhandler(500)
