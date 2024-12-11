@@ -170,7 +170,7 @@ def get_recipes():
             cursor.execute("SELECT * FROM Recipes")
             recipes = cursor.fetchall()
         
-        if not recipes:  # Check if the result is empty
+        if not recipes: 
             return jsonify({"error": "Not Found", "message": "No recipes found"}), HTTPStatus.NOT_FOUND
         
         return jsonify(recipes), HTTPStatus.OK
