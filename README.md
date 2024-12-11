@@ -9,12 +9,14 @@ It includes operations for creating, retrieving, updating, and deleting menus in
 pip install -r requirements.txt
 
 Configuration
-Environment variables needed:
+To configure the database:
+1. Upload the ```recipe``` MySQL database to your server or local machine.
+2. Update the database configuration in the Flask app with your database connection details.
 
-- MYSQL_HOST: Database host (localhost)
-- MYSQL_USER: MySQL username (root)
-- MYSQL_PASSWORD: MySQL password (root)
-- MYSQL_DB: Database name (recipe)
+- ```MYSQL_HOST```: Database host (localhost)
+- ```MYSQL_USER```: MySQL username (root)
+- ```MYSQL_PASSWORD```: MySQL password (root)
+- ```MYSQL_DB```: Database name (recipe)
 
 ## API Endpoints
 
