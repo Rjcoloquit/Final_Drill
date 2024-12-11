@@ -2,8 +2,10 @@ from flask import Flask, jsonify, request
 from flask_mysqldb import MySQL
 from http import HTTPStatus
 import logging
-
-
+import json
+import bcrypt
+import jwt
+import datetime
 
 logging.basicConfig(level=logging.DEBUG)
 app = Flask(__name__)
@@ -12,8 +14,99 @@ app.config["MYSQL_HOST"] = "localhost"
 app.config["MYSQL_USER"] = "root"
 app.config["MYSQL_PASSWORD"] = "root"
 app.config["MYSQL_DB"] = "recipe"
+app.config["SECRET_KEY"] = "bulldog"
 
 mysql = MySQL(app)
+
+# Helper Functions
+def handle_error(message, status_code):
+    return jsonify({"error": message}), status_code
+
+def validate_token():
+    token = request.headers.get("x-access-token")
+
+    if not token:
+        return None, handle_error("Token is missing!", 401)
+
+    try:
+        data = jwt.decode(token, app.config["SECRET_KEY"], algorithms=["HS256"])
+        current_user = {"user_id": data["user_id"], "role": data["role"]}
+        return current_user, None
+    except Exception:
+        return None, handle_error("Token is invalid!", 401)
+
+def validate_role(current_user, valid_roles):
+    if isinstance(valid_roles, str):
+        valid_roles = [valid_roles]
+    
+    if current_user["role"] not in valid_roles:
+        return jsonify({"error": "Unauthorized access"}), 403
+    return None
+
+users_data = {
+    "users": []
+}
+
+def save_to_json():
+    with open("users.json", "w") as f:
+        json.dump(users_data, f)
+
+def load_from_json():
+    global users_data
+    try:
+        with open("users.json", "r") as f:
+            users_data = json.load(f)
+    except FileNotFoundError:
+        save_to_json()
+
+# User Management Endpoints
+@app.route("/register", methods=["POST"])
+def register():
+    data = request.get_json()
+    if not data or not data.get("username") or not data.get("password") or not data.get("role"):
+        return handle_error("Missing required fields: username, password, and role are mandatory", 400)
+
+    username = data["username"]
+    password = bcrypt.hashpw(data["password"].encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    role = data["role"]
+
+    load_from_json()
+
+    for user in users_data["users"]:
+        if user["username"] == username:
+            return handle_error("Username already exists", 400)
+
+    new_user = {"username": username, "password": password, "role": role}
+    users_data["users"].append(new_user)
+    save_to_json()
+
+    return jsonify({"message": "User registered successfully"}), 201
+
+@app.route("/login", methods=["POST"])
+def login():
+    data = request.get_json()
+    if not data or not data.get("username") or not data.get("password"):
+        return handle_error("Missing required fields: username and password are mandatory", 400)
+
+    username = data["username"]
+    password = data["password"]
+
+    load_from_json()
+
+    for user in users_data["users"]:
+        if user["username"] == username and bcrypt.checkpw(password.encode("utf-8"), user["password"].encode("utf-8")):
+            token = jwt.encode(
+                {
+                    "user_id": username,
+                    "role": user["role"],
+                    "exp": datetime.datetime.utcnow() + datetime.timedelta(hours=1),
+                },
+                app.config["SECRET_KEY"],
+                algorithm="HS256",
+            )
+            return jsonify({"token": token}), 200
+
+    return handle_error("Invalid credentials", 401)
 
 def validate_menu_data(data, is_update=False):
     """Validates required fields for creating and updating menus"""
@@ -98,6 +191,11 @@ def get_menu(menu_id):
 
 @app.route('/menus', methods=['POST'])
 def create_menu():
+    current_user, error = validate_token()
+    if error:
+        return error
+
+    
     data = request.get_json()
     menu_name = data.get('menu_name')
     menu_description = data.get('menu_description')
@@ -122,6 +220,9 @@ def create_menu():
 
 @app.route('/menus/<int:menu_id>', methods=['PUT'])
 def update_menu(menu_id):
+    current_user, error = validate_token()
+    if error:
+        return error
     """Update a specific menu by ID"""
     try:
         data = request.get_json()
@@ -166,6 +267,9 @@ def update_menu(menu_id):
 
 @app.route('/menus/<int:id>', methods=['DELETE'])
 def delete_menu(id):
+    current_user, error = validate_token()
+    if error:
+        return error
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (id,))
@@ -200,6 +304,9 @@ def get_recipes():
 
 @app.route('/recipes', methods=['POST'])
 def create_recipe():
+    current_user, error = validate_token()
+    if error:
+        return error
     data = request.get_json()
     recipe_name = data.get('recipe_name')
     recipe_description = data.get('recipe_description')
@@ -242,6 +349,9 @@ def get_recipe(recipe_id):
 
 @app.route('/recipes/<int:recipe_id>', methods=['PUT'])
 def update_recipe(recipe_id):
+    current_user, error = validate_token()
+    if error:
+        return error
     """Update a specific recipe by ID"""
     try:
         data = request.get_json()
@@ -282,6 +392,9 @@ def update_recipe(recipe_id):
 
 @app.route('/recipes/<int:id>', methods=['DELETE'])
 def delete_recipe(id):
+    current_user, error = validate_token()
+    if error:
+        return error
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Recipes WHERE recipe_id = %s", (id,))
