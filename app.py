@@ -194,8 +194,10 @@ def create_menu():
     current_user, error = validate_token()
     if error:
         return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
 
-    
     data = request.get_json()
     menu_name = data.get('menu_name')
     menu_description = data.get('menu_description')
@@ -223,6 +225,9 @@ def update_menu(menu_id):
     current_user, error = validate_token()
     if error:
         return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
     """Update a specific menu by ID"""
     try:
         data = request.get_json()
@@ -270,6 +275,10 @@ def delete_menu(id):
     current_user, error = validate_token()
     if error:
         return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+    
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Menus WHERE menu_id = %s", (id,))
@@ -307,6 +316,10 @@ def create_recipe():
     current_user, error = validate_token()
     if error:
         return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+    
     data = request.get_json()
     recipe_name = data.get('recipe_name')
     recipe_description = data.get('recipe_description')
@@ -352,6 +365,10 @@ def update_recipe(recipe_id):
     current_user, error = validate_token()
     if error:
         return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+    
     """Update a specific recipe by ID"""
     try:
         data = request.get_json()
@@ -395,6 +412,10 @@ def delete_recipe(id):
     current_user, error = validate_token()
     if error:
         return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+    
     try:
         with mysql.connection.cursor() as cursor:
             cursor.execute("SELECT * FROM Recipes WHERE recipe_id = %s", (id,))
