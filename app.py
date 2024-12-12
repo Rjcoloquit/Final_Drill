@@ -126,7 +126,7 @@ def validate_menu_data(data, is_update=False):
 
 @app.route('/')
 def welcome():
-    """Welcome message with clickable links and descriptions for Menus and Recipes"""
+    """Welcome message with clickable links and descriptions for Menus, Recipes, and Ingredients"""
     base_url = request.host_url.rstrip('/')
     return f"""
     <!DOCTYPE html>
@@ -136,13 +136,16 @@ def welcome():
     </head>
     <body>
         <h1>Welcome to the Recipe API!</h1>
-        <p>This API allows you to manage menus and recipes for your application. Use the links below to explore the resources:</p>
+        <p>This API allows you to manage menus, recipes, and ingredients for your application. Use the links below to explore the resources:</p>
         <ul>
             <li>
                 <a href="{base_url}/menus">Menus</a>
             </li>
             <li>
                 <a href="{base_url}/recipes">Recipes</a>
+            </li>
+            <li>
+                <a href="{base_url}/ingredients">Ingredients</a>
             </li>
         </ul>
     </body>
@@ -432,6 +435,147 @@ def delete_recipe(id):
         app.logger.error(f"Error occurred: {str(e)}")
         return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
+
+#INGREDIENTS
+@app.route('/ingredients', methods=['GET'])
+def get_ingredients():
+    """Retrieve all ingredients."""
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM ingredients")
+            ingredients = cursor.fetchall()
+
+        if not ingredients:
+            return jsonify({"error": "Not Found", "message": "No ingredients found"}), HTTPStatus.NOT_FOUND
+
+        return jsonify([{
+            "ingredient_id": row[0],
+            "ingredient_name": row[1],
+            "ingredient_type_code": row[2]
+        } for row in ingredients]), HTTPStatus.OK
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@app.route('/ingredients/<int:ingredient_id>', methods=['GET'])
+def get_ingredient(ingredient_id):
+    """Retrieve a specific ingredient by ID."""
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM ingredients WHERE ingredient_id = %s", (ingredient_id,))
+            ingredient = cursor.fetchone()
+
+        if not ingredient:
+            return jsonify({"error": "Not Found", "message": "Ingredient not found"}), HTTPStatus.NOT_FOUND
+
+        return jsonify({
+            "ingredient_id": ingredient[0],
+            "ingredient_name": ingredient[1],
+            "ingredient_type_code": ingredient[2]
+        }), HTTPStatus.OK
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@app.route('/ingredients', methods=['POST'])
+def create_ingredient():
+    """Create a new ingredient."""
+    current_user, error = validate_token()
+    if error:
+        return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+
+    data = request.get_json()
+    ingredient_name = data.get('ingredient_name')
+    ingredient_type_code = data.get('ingredient_type_code')
+
+    if not ingredient_name or not ingredient_type_code:
+        return jsonify({"error": "Bad Request", "message": "Ingredient name and type code are required"}), HTTPStatus.BAD_REQUEST
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("""
+                INSERT INTO ingredients (ingredient_name, ingredient_type_code)
+                VALUES (%s, %s)
+            """, (ingredient_name, ingredient_type_code))
+            mysql.connection.commit()
+
+        return jsonify({"message": "Ingredient created successfully"}), HTTPStatus.CREATED
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@app.route('/ingredients/<int:ingredient_id>', methods=['PUT'])
+def update_ingredient(ingredient_id):
+    """Update a specific ingredient by ID."""
+    current_user, error = validate_token()
+    if error:
+        return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+
+    data = request.get_json()
+    ingredient_name = data.get('ingredient_name')
+    ingredient_type_code = data.get('ingredient_type_code')
+
+    if not ingredient_name and not ingredient_type_code:
+        return jsonify({"error": "Bad Request", "message": "Ingredient name or type code must be provided"}), HTTPStatus.BAD_REQUEST
+
+    update_fields = []
+    update_values = []
+
+    if ingredient_name:
+        update_fields.append("ingredient_name = %s")
+        update_values.append(ingredient_name)
+
+    if ingredient_type_code:
+        update_fields.append("ingredient_type_code = %s")
+        update_values.append(ingredient_type_code)
+
+    update_values.append(ingredient_id)
+
+    try:
+        query = f"UPDATE ingredients SET {', '.join(update_fields)} WHERE ingredient_id = %s"
+        with mysql.connection.cursor() as cursor:
+            cursor.execute(query, tuple(update_values))
+            mysql.connection.commit()
+
+            if cursor.rowcount == 0:
+                return jsonify({"error": "Not Found", "message": "Ingredient not found"}), HTTPStatus.NOT_FOUND
+
+        return jsonify({"message": "Ingredient updated successfully"}), HTTPStatus.OK
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
+
+@app.route('/ingredients/<int:ingredient_id>', methods=['DELETE'])
+def delete_ingredient(ingredient_id):
+    """Delete a specific ingredient by ID."""
+    current_user, error = validate_token()
+    if error:
+        return error
+    role_error = validate_role(current_user, valid_roles=['admin', 'manager'])
+    if role_error:
+        return role_error
+
+    try:
+        with mysql.connection.cursor() as cursor:
+            cursor.execute("SELECT * FROM ingredients WHERE ingredient_id = %s", (ingredient_id,))
+            ingredient = cursor.fetchone()
+
+            if not ingredient:
+                return jsonify({"error": "Not Found", "message": "Ingredient not found"}), HTTPStatus.NOT_FOUND
+
+            cursor.execute("DELETE FROM ingredients WHERE ingredient_id = %s", (ingredient_id,))
+            mysql.connection.commit()
+
+        return jsonify({"message": "Ingredient deleted successfully"}), HTTPStatus.OK
+    except Exception as e:
+        app.logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "message": str(e)}), HTTPStatus.INTERNAL_SERVER_ERROR
 
 
 @app.errorhandler(500)
