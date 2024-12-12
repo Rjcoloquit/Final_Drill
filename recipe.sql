@@ -23,13 +23,13 @@ DROP TABLE IF EXISTS `ingredients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `ingredients` (
-  `ingredient_id` int NOT NULL,
+  `ingredient_id` int NOT NULL AUTO_INCREMENT,
   `ingredient_name` varchar(100) DEFAULT NULL,
   `ingredient_type_code` varchar(10) DEFAULT NULL,
   PRIMARY KEY (`ingredient_id`),
   KEY `ingredient_type_code` (`ingredient_type_code`),
   CONSTRAINT `ingredients_ibfk_1` FOREIGN KEY (`ingredient_type_code`) REFERENCES `ref_types` (`type_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=32 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -77,7 +77,7 @@ DROP TABLE IF EXISTS `recipe_step_ingredients`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `recipe_step_ingredients` (
-  `recipe_id` int NOT NULL,
+  `recipe_id` int NOT NULL AUTO_INCREMENT,
   `step_number` int NOT NULL,
   `ingredient_id` int NOT NULL,
   `amount_required` varchar(50) DEFAULT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE `recipe_step_ingredients` (
   KEY `ingredient_id` (`ingredient_id`),
   CONSTRAINT `recipe_step_ingredients_ibfk_1` FOREIGN KEY (`recipe_id`, `step_number`) REFERENCES `recipe_steps` (`recipe_id`, `step_number`),
   CONSTRAINT `recipe_step_ingredients_ibfk_2` FOREIGN KEY (`ingredient_id`) REFERENCES `ingredients` (`ingredient_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -106,11 +106,11 @@ DROP TABLE IF EXISTS `recipe_steps`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `recipe_steps` (
-  `recipe_id` int NOT NULL,
+  `recipe_id` int NOT NULL AUTO_INCREMENT,
   `step_number` int NOT NULL,
   `instructions` text,
   PRIMARY KEY (`recipe_id`,`step_number`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -181,4 +181,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2024-12-11 22:08:06
+-- Dump completed on 2024-12-12 18:29:59
