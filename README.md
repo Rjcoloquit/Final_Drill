@@ -32,6 +32,11 @@ To configure the database:
 |`/recipes/<int:recipe_id>`|GET|Get a specific recipe by ID|
 |`/recipes/<int:recipe_id>`|PUT|Update a specific recipe by ID|
 |`/recipes/<int:recipe_id>`|DELETE|Delete a specific recipe by ID|
+|`/ingredients`|GET|Get all ingredients|
+|`/ingredients`|POST|Create a new ingredient|
+|`/ingredients/<int:ingredient_id>`|GET|Get a specific ingredient by ID|
+|`/ingredients/<int:ingredient_id>`|PUT|Update a specific ingredient by ID|
+|`/ingredients/<int:ingredient_id>`|DELETE|Delete a specific ingredient by ID|
 
 Testing
 To run tests, ensure you have pytest installed and execute the following command:
