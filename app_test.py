@@ -152,3 +152,89 @@ def test_delete_recipe_success(client, mock_db):
 
     assert response.status_code == 200
     assert b"Recipe deleted successfully" in response.data
+
+
+# INGREDIENTS Tests
+def test_get_ingredients_empty(client, mock_db):
+    mock_db.fetchall.return_value = []  
+
+    response = client.get('/ingredients')
+
+    assert response.status_code == 404
+    assert b"No ingredients found" in response.data
+
+def test_get_ingredients(client, mock_db):
+    mock_db.fetchall.return_value = [
+        (1, 'Sugar', 'Sweetener')
+    ]
+
+    response = client.get('/ingredients')
+
+    assert response.status_code == 200
+    assert b"Sugar" in response.data
+    assert b"Sweetener" in response.data
+
+def test_get_ingredient(client, mock_db):
+    mock_db.fetchone.return_value = (1, 'Sugar', 'Sweetener')
+
+    response = client.get('/ingredients/1')
+
+    assert response.status_code == 200
+    assert b"Sugar" in response.data
+    assert b"Sweetener" in response.data
+
+def test_get_ingredient_not_found(client, mock_db):
+    mock_db.fetchone.return_value = None
+
+    response = client.get('/ingredients/999')
+
+    assert response.status_code == 404
+    assert b"Ingredient not found" in response.data
+
+def test_post_ingredient_missing_fields(client):
+    response = client.post('/ingredients', json={})
+
+    assert response.status_code == 400
+    assert b"Ingredient name and type code are required" in response.data
+
+def test_post_ingredient_success(client, mock_db):
+    mock_db.rowcount = 1
+
+    response = client.post('/ingredients', json={
+        'ingredient_name': 'Salt', 'ingredient_type_code': 'Seasoning'
+    })
+
+    assert response.status_code == 201
+    assert b"Ingredient created successfully" in response.data
+
+def test_put_ingredient_missing_fields(client):
+    response = client.put('/ingredients/1', json={})
+
+    assert response.status_code == 400
+    assert b"Ingredient name or type code must be provided" in response.data
+
+def test_put_ingredient_success(client, mock_db):
+    mock_db.rowcount = 1
+
+    response = client.put('/ingredients/1', json={
+        'ingredient_name': 'Updated Salt', 'ingredient_type_code': 'Seasoning'
+    })
+
+    assert response.status_code == 200
+    assert b"Ingredient updated successfully" in response.data
+
+def test_delete_ingredient_not_found(client, mock_db):
+    mock_db.rowcount = 0
+
+    response = client.delete('/ingredients/999')
+
+    assert response.status_code == 404
+    assert b"Ingredient not found" in response.data
+
+def test_delete_ingredient_success(client, mock_db):
+    mock_db.rowcount = 1
+
+    response = client.delete('/ingredients/1')
+
+    assert response.status_code == 200
+    assert b"Ingredient deleted successfully" in response.data
